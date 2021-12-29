@@ -1,3 +1,4 @@
+
 const net = require('net'),
 events = require('events'),
 cluster = require('cluster'),
@@ -6,11 +7,8 @@ threads = process.argv[5];
 process.setMaxListeners(0); 
 events.EventEmitter.defaultMaxListeners = Infinity;
 events.EventEmitter.prototype._maxListeners = Infinity;
-statusbox = process.argv[6];
-
-
 var log = console.log;
-log(statusbox);
+
 
 global.logger = function() { 
     var first_parameter = arguments[0];
@@ -55,6 +53,5 @@ if (cluster.isMaster) {
 	});
     }
 } else {
-	console.log(">>###");
     require('./flood');
 }
